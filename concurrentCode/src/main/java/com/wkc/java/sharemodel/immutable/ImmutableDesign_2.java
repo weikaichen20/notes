@@ -14,6 +14,7 @@ public class ImmutableDesign_2 {
      * 属性用final修饰保证该属性是只读的，不能修改
      * 类用final修饰保证了该类中的方法不能被覆盖，防止子类无意间破坏不可变性
      *
+     * 通过创建副本对象来避免共享的手段称之为【保护性拷贝】比如String的subString
      *
      * */
 }
