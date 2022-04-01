@@ -2,10 +2,8 @@ package com.wkc.leetcode.texas;
 
 import lombok.extern.slf4j.Slf4j;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Stack;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Created on 2022/3/28.
@@ -183,12 +181,12 @@ public final class Poker {
 
     private static ArrayList<Card> getPlayerMaxHandCard(ArrayList<Card> handCard, ArrayList<Card> pubCard) {
         if (pubCard.size() == 3) {
-            ArrayList<Card> cards =getMixSort(handCard,pubCard);
+            ArrayList<Card> cards = getMixSort(handCard, pubCard);
             return cards;
         } else if (pubCard.size() == 4) {
-            ArrayList<Card> cards =getMixSort(handCard,pubCard);
-//            checkFlush();
-//            checkStraight();
+            ArrayList<Card> cards = getMixSort(handCard, pubCard);
+            boolean a = checkFlush(cards);
+            boolean b = checkStraight(cards);
             return null;
         } else if (pubCard.size() == 5) {
             return null;
@@ -198,10 +196,69 @@ public final class Poker {
 
     }
 
+    public static boolean checkStraight(ArrayList<Card> cards) {
+        if (cards.size() < 5) return false;
+        cards = getMixSort(cards);
+        List<Integer> collect = cards.stream().map(c -> c.getNumber()).collect(Collectors.toList());
+        for (int i = 0; i < collect.size(); i++) {
+            if (collect.size() - i >= 5) {
+                if (collect.get(i).equals(Integer.valueOf(14))) {
+
+                    if (collect.get(collect.size() - 1).equals(Integer.valueOf(2))) {
+                        if (collect.get(collect.size() - 2).equals(3) && collect.get(collect.size() - 3).equals(4) && collect.get(collect.size() - 4).equals(5)) {
+                            return true;
+                        }
+                    } else {
+                        for (int j = i+1; j < i+5; j++) {
+                            if (!(collect.get(j)==collect.get(j-1)-1)){
+                                return false;
+                            }
+                        }
+                        return true;
+                    }
+                    continue;
+                }
+                for (int j = i+1; j < i+5; j++) {
+                    if (!(collect.get(j)==collect.get(j-1)-1)){
+                        return false;
+                    }
+                }
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public static boolean checkFlush(ArrayList<Card> cards) {
+        if (cards.size() < 5) return false;
+        cards = getMixSort(cards);
+        List<Integer> collect = cards.stream().map(c -> c.getSn()).collect(Collectors.toList());
+        HashMap<Integer, Integer> hashMap = new HashMap<>();
+        collect.forEach(s -> hashMap.put(s, hashMap.getOrDefault(s, 0) + 1));
+        for (Integer s : collect) {
+            if (hashMap.getOrDefault(s, 0) >= 5) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private static ArrayList<Card> getMixSort(ArrayList<Card> handCard, ArrayList<Card> pubCard) {
         ArrayList<Card> cards = new ArrayList<>();
         cards.addAll(handCard);
         cards.addAll(pubCard);
+        cards.sort(new Comparator<Card>() {
+            @Override
+            public int compare(Card o1, Card o2) {
+                return o1.getNumber() == o2.getNumber() ? o1.getSn() - o2.getSn() : o2.getNumber() - o1.getNumber();
+            }
+        });
+        return cards;
+    }
+
+    private static ArrayList<Card> getMixSort(ArrayList<Card> handCard) {
+        ArrayList<Card> cards = new ArrayList<>();
+        cards.addAll(handCard);
         cards.sort(new Comparator<Card>() {
             @Override
             public int compare(Card o1, Card o2) {

@@ -13,6 +13,7 @@ public class Player {
     private String name;
     private BigDecimal chips;
     private BigDecimal account;
+    private String maxHand;
 
     public Player(ArrayList<Card> handCard, String name, BigDecimal chips, BigDecimal account) {
         this.handCard = handCard;
@@ -63,4 +64,11 @@ public class Player {
     }
 
 
+    public String getMaxHand() {
+        return maxHand;
+    }
+
+    public void setMaxHand(String maxHand) {
+        this.maxHand = maxHand;
+    }
 }
