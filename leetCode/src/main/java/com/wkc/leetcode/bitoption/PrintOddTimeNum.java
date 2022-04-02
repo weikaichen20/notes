@@ -1,4 +1,4 @@
-package com.wkc.leetcode.BitOp;
+package com.wkc.leetcode.bitoption;
 
 /**
  * Created on 2022/3/16.
