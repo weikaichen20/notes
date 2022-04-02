@@ -1,5 +1,7 @@
 package com.wkc.java.threadpool;
 
+import lombok.extern.slf4j.Slf4j;
+
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.HashSet;
@@ -12,12 +14,29 @@ import java.util.concurrent.locks.ReentrantLock;
  *
  * @author Weikaichen
  */
+@Slf4j
 public class TestPool_1 {
+    public static void main(String[] args) {
+        ThreadPool threadPool = new ThreadPool(2, 1000, TimeUnit.MILLISECONDS, 10, (t, queue) -> {
+            //1.死等
+//            queue.put(t);
+            // 2.超时等待
+//            queue.offer(t, 500, TimeUnit.MILLISECONDS);
+            //3.放弃任务执行
+//            log.debug("放弃");
+            //4.抛出异常
+//            throw new RuntimeException("任务执行失败");
+            //5.让调用者自己执行
+//            t.run();
+        });
+
+    }
 }
-class ThreadPool{
+
+class ThreadPool {
     private BlockingQueue<Runnable> taskQueue;
 
-    private HashSet<Worker> workers=new HashSet<>();
+    private HashSet<Worker> workers = new HashSet<>();
 
     //核心线程数
     private int coreSize;
@@ -28,29 +47,35 @@ class ThreadPool{
     //时间单位
     private TimeUnit timeUnit;
 
+    //拒绝策略
+    private RejectPolicy<Runnable> rejectPolicy;
+
     //执行任务
-    public void execute(Runnable task){
+    public void execute(Runnable task) {
         //当任务数没有超过coreSize，直接交给worker
         //超过coreSize，加入任务队列
-        synchronized (workers){
-            if (workers.size()<coreSize){
+        synchronized (workers) {
+            if (workers.size() < coreSize) {
                 Worker worker = new Worker(task);
                 workers.add(worker);
                 worker.start();
-            }else {
-                taskQueue.put(task);
+            } else {
+//                taskQueue.put(task);
+                //1.死等 2.超时等待 3.放弃任务执行 4.抛出异常 5.让调用者自己执行
+                taskQueue.tryPut(rejectPolicy,task);
             }
         }
     }
 
-    public ThreadPool(int coreSize, long timeout, TimeUnit timeUnit,int capacity) {
+    public ThreadPool(int coreSize, long timeout, TimeUnit timeUnit, int capacity,RejectPolicy<Runnable> rejectPolicy) {
         this.coreSize = coreSize;
         this.timeout = timeout;
         this.timeUnit = timeUnit;
-        taskQueue=new BlockingQueue<>(capacity);
+        taskQueue = new BlockingQueue<>(capacity);
+        this.rejectPolicy=rejectPolicy;
     }
 
-    class Worker extends Thread{
+    class Worker extends Thread {
         private Runnable task;
 
         public Worker(Runnable task) {
@@ -62,34 +87,40 @@ class ThreadPool{
             //执行任务
             //1.当task不为空，执行任务
             //2.当task执行完毕，从任务队列获取任务执行
-            while (task!=null||(task=taskQueue.poll(timeout, timeUnit))!=null){
+            while (task != null || (task = taskQueue.poll(timeout, timeUnit)) != null) {
                 try {
                     task.run();
-                } catch (Exception e){
+                } catch (Exception e) {
                     e.printStackTrace();
-                }finally {
-                    task=null;
+                } finally {
+                    task = null;
                 }
             }
-            synchronized (workers){
+            synchronized (workers) {
                 workers.remove(this);
             }
         }
     }
 
 }
-class BlockingQueue<T>{
+
+@FunctionalInterface
+interface RejectPolicy<T>{
+    void reject(T task,BlockingQueue<T> queue);
+}
+
+class BlockingQueue<T> {
     //1.任务队列
-    private Deque<T> queue=new ArrayDeque<>();
+    private Deque<T> queue = new ArrayDeque<>();
 
     //2.锁
-    private ReentrantLock lock=new ReentrantLock();
+    private ReentrantLock lock = new ReentrantLock();
 
     //3.生产者条件变量
-    private Condition fullWaitSet=lock.newCondition();
+    private Condition fullWaitSet = lock.newCondition();
 
     //4.消费者条件变量
-    private Condition emptyWaitSet=lock.newCondition();
+    private Condition emptyWaitSet = lock.newCondition();
 
 
     //5.队列容量
@@ -100,18 +131,17 @@ class BlockingQueue<T>{
     }
 
     //超时获取
-    public T poll(long timeout,TimeUnit timeUnit){
+    public T poll(long timeout, TimeUnit timeUnit) {
         lock.lock();
         try {
             long nanos = timeUnit.toNanos(timeout);
-            while (queue.isEmpty()){
+            while (queue.isEmpty()) {
                 try {
                     //需要考虑虚假唤醒问题
-                    if (nanos<=0){
+                    if (nanos <= 0) {
                         return null;
                     }
                     nanos = emptyWaitSet.awaitNanos(nanos);
-
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
@@ -119,17 +149,17 @@ class BlockingQueue<T>{
             T t = queue.removeFirst();
             fullWaitSet.signalAll();
             return t;
-        }finally {
+        } finally {
             lock.unlock();
         }
     }
 
 
     //阻塞获取
-    public T take(){
+    public T take() {
         lock.lock();
         try {
-            while (queue.isEmpty()){
+            while (queue.isEmpty()) {
                 try {
                     emptyWaitSet.await();
                 } catch (InterruptedException e) {
@@ -139,16 +169,16 @@ class BlockingQueue<T>{
             T t = queue.removeFirst();
             fullWaitSet.signalAll();
             return t;
-        }finally {
+        } finally {
             lock.unlock();
         }
     }
 
     //阻塞添加
-    public void put(T t){
+    public void put(T t) {
         lock.lock();
         try {
-            while (queue.size()==capacity){
+            while (queue.size() == capacity) {
                 try {
                     fullWaitSet.await();
                 } catch (InterruptedException e) {
@@ -158,15 +188,53 @@ class BlockingQueue<T>{
             queue.addLast(t);
             emptyWaitSet.signalAll();
 
-        }finally {
+        } finally {
             lock.unlock();
         }
     }
 
-    public int size(){
+    //阻塞超时添加
+    public boolean offer(T t, long timeout, TimeUnit timeUnit) {
+        lock.lock();
+        try {
+            long nanos = timeUnit.toNanos(timeout);
+            while (queue.size() == capacity) {
+                try {
+                    if (nanos <= 0) {
+                        return false;
+                    }
+                    nanos = fullWaitSet.awaitNanos(nanos);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+            queue.addLast(t);
+            emptyWaitSet.signalAll();
+            return true;
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    public int size() {
         lock.lock();
         try {
             return queue.size();
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    public void tryPut(RejectPolicy<T> rejectPolicy, T task) {
+        lock.lock();
+        try {
+            //判断队列是否已满
+            if (queue.size()==capacity){
+                rejectPolicy.reject(task, this);
+            }else {
+                queue.addLast(task);
+                emptyWaitSet.signalAll();
+            }
         }finally {
             lock.unlock();
         }
