@@ -10,14 +10,14 @@ import java.util.Stack;
  */
 public class Test {
     public static void main(String[] args) {
-        int count=0;
-        while (true){
-            Stack<Card> cards = Poker.POKER;
+        int count = 0;
+        while (count <= 10000000) {
+            Stack<Card> cards = Poker.getPokerCard();
             ArrayList<Card> list = new ArrayList<>();
             for (int i = 0; i < 5; i++) {
                 list.add(cards.pop());
             }
-            boolean b = Poker.checkFlushStraight(list);
+            boolean b = Poker.checkRoyalFlushStraight(list);
             count++;
             if (b) {
                 System.out.println(list + "=====>" + count);

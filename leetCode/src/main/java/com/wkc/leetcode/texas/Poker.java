@@ -23,11 +23,11 @@ public final class Poker {
     public volatile static int number;
     private final static ArrayList<Card> pubCard = new ArrayList<>();
 
-    static {
+    {
         getPokerCard();
     }
 
-    private static Stack<Card> getPokerCard() {
+    public static Stack<Card> getPokerCard() {
         POKER.clear();
         ArrayList<Card> cards = new ArrayList<>();
         for (String n : NUMBER) {
@@ -248,5 +248,29 @@ public final class Poker {
         boolean checkStraight = checkStraight(cards);
         if (checkStraight) return true;
         else return false;
+    }
+
+    public static boolean checkRoyalFlushStraight(List<Card> list) {
+        Map<Integer, List<Card>> listMap = list.stream().collect(Collectors.groupingBy(Card::getSn));
+        Integer flushSn = 0;
+        for (Integer sn : listMap.keySet()) {
+            flushSn = listMap.get(sn).size() >= 5 ? sn : 0;
+        }
+        if (flushSn == 0) return false;
+        List<Card> cards = listMap.get(flushSn);
+        boolean checkStraight = checkMaxStraight(cards);
+        if (checkStraight) return true;
+        else return false;
+    }
+
+    private static boolean checkMaxStraight(List<Card> cards) {
+        if (cards.size() < 5) return false;
+        cards = getMixSort(cards);
+        List<Integer> cardNumber = cards.stream().map(c -> c.getNumber()).collect(Collectors.toList());
+        return cardNumber.get(0) == 14
+                && cardNumber.get(1) == 13
+                && cardNumber.get(2) == 12
+                && cardNumber.get(3) == 11
+                && cardNumber.get(4) == 10;
     }
 }
