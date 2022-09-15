@@ -16,7 +16,7 @@ public final class Poker {
     private final static String[] NUMBER = {"A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"};
     private final static String[] SUIT = {"♠", "♣", "♥", "♦"};
 
-    private static Stack<Card> POKER = new Stack<>();
+    public static Stack<Card> POKER = new Stack<>();
 
     private static ArrayList<Player> player = new ArrayList<>();
 
@@ -28,6 +28,7 @@ public final class Poker {
     }
 
     private static Stack<Card> getPokerCard() {
+        POKER.clear();
         ArrayList<Card> cards = new ArrayList<>();
         for (String n : NUMBER) {
             for (String s : SUIT) {
@@ -88,12 +89,6 @@ public final class Poker {
                 break;
         }
         return 0;
-    }
-
-    public static Stack<Card> newPoker() {
-        POKER.clear();
-        return getPokerCard();
-
     }
 
     public static ArrayList<Player> start(int num) {
@@ -173,18 +168,18 @@ public final class Poker {
 
     public static void getMaxCards() {
         getPlayer().forEach(p -> {
-            ArrayList<Card> handCard = p.getHandCard();
-            ArrayList<Card> playerMaxHandCard = getPlayerMaxHandCard(handCard, pubCard);
+            List<Card> handCard = p.getHandCard();
+            List<Card> playerMaxHandCard = getPlayerMaxHandCard(handCard, pubCard);
             System.out.println(playerMaxHandCard);
         });
     }
 
-    private static ArrayList<Card> getPlayerMaxHandCard(ArrayList<Card> handCard, ArrayList<Card> pubCard) {
+    private static List<Card> getPlayerMaxHandCard(List<Card> handCard, List<Card> pubCard) {
         if (pubCard.size() == 3) {
-            ArrayList<Card> cards = getMixSort(handCard, pubCard);
+            List<Card> cards = getMixSort(handCard, pubCard);
             return cards;
         } else if (pubCard.size() == 4) {
-            ArrayList<Card> cards = getMixSort(handCard, pubCard);
+            List<Card> cards = getMixSort(handCard, pubCard);
             boolean a = checkFlush(cards);
             boolean b = checkStraight(cards);
             return null;
@@ -196,54 +191,30 @@ public final class Poker {
 
     }
 
-    public static boolean checkStraight(ArrayList<Card> cards) {
+    public static boolean checkStraight(List<Card> cards) {
         if (cards.size() < 5) return false;
         cards = getMixSort(cards);
-        List<Integer> collect = cards.stream().map(c -> c.getNumber()).collect(Collectors.toList());
-        for (int i = 0; i < collect.size(); i++) {
-            if (collect.size() - i >= 5) {
-                if (collect.get(i).equals(Integer.valueOf(14))) {
-
-                    if (collect.get(collect.size() - 1).equals(Integer.valueOf(2))) {
-                        if (collect.get(collect.size() - 2).equals(3) && collect.get(collect.size() - 3).equals(4) && collect.get(collect.size() - 4).equals(5)) {
-                            return true;
-                        }
-                    } else {
-                        for (int j = i+1; j < i+5; j++) {
-                            if (!(collect.get(j)==collect.get(j-1)-1)){
-                                return false;
-                            }
-                        }
-                        return true;
-                    }
-                    continue;
-                }
-                for (int j = i+1; j < i+5; j++) {
-                    if (!(collect.get(j)==collect.get(j-1)-1)){
-                        return false;
-                    }
-                }
-                return true;
-            }
+        List<Integer> cardNumber = cards.stream().map(c -> c.getNumber()).collect(Collectors.toList());
+        if (cardNumber.contains(14)) cardNumber.add(1);
+        boolean flag = true;
+        for (int i = 1; i < cardNumber.size(); i++) {
+            if (cardNumber.get(i) + 1 != cardNumber.get(i - 1)) flag = false;
         }
-        return false;
+        return flag;
     }
 
-    public static boolean checkFlush(ArrayList<Card> cards) {
+    public static boolean checkFlush(List<Card> cards) {
         if (cards.size() < 5) return false;
-        cards = getMixSort(cards);
-        List<Integer> collect = cards.stream().map(c -> c.getSn()).collect(Collectors.toList());
-        HashMap<Integer, Integer> hashMap = new HashMap<>();
-        collect.forEach(s -> hashMap.put(s, hashMap.getOrDefault(s, 0) + 1));
-        for (Integer s : collect) {
-            if (hashMap.getOrDefault(s, 0) >= 5) {
-                return true;
-            }
+        Map<Integer, List<Card>> listMap = cards.stream().collect(Collectors.groupingBy(Card::getSn));
+        Integer flushSn = 0;
+        for (Integer sn : listMap.keySet()) {
+            flushSn = listMap.get(sn).size() >= 5 ? sn : 0;
         }
-        return false;
+        if (flushSn == 0) return false;
+        else return true;
     }
 
-    private static ArrayList<Card> getMixSort(ArrayList<Card> handCard, ArrayList<Card> pubCard) {
+    private static List<Card> getMixSort(List<Card> handCard, List<Card> pubCard) {
         ArrayList<Card> cards = new ArrayList<>();
         cards.addAll(handCard);
         cards.addAll(pubCard);
@@ -256,16 +227,26 @@ public final class Poker {
         return cards;
     }
 
-    private static ArrayList<Card> getMixSort(ArrayList<Card> handCard) {
-        ArrayList<Card> cards = new ArrayList<>();
-        cards.addAll(handCard);
+    private static List<Card> getMixSort(List<Card> cards) {
         cards.sort(new Comparator<Card>() {
             @Override
             public int compare(Card o1, Card o2) {
-                return o1.getNumber() == o2.getNumber() ? o1.getSn() - o2.getSn() : o2.getNumber() - o1.getNumber();
+                return o2.getNumber() - o1.getNumber();
             }
         });
         return cards;
     }
 
+    public static boolean checkFlushStraight(List<Card> list) {
+        Map<Integer, List<Card>> listMap = list.stream().collect(Collectors.groupingBy(Card::getSn));
+        Integer flushSn = 0;
+        for (Integer sn : listMap.keySet()) {
+            flushSn = listMap.get(sn).size() >= 5 ? sn : 0;
+        }
+        if (flushSn == 0) return false;
+        List<Card> cards = listMap.get(flushSn);
+        boolean checkStraight = checkStraight(cards);
+        if (checkStraight) return true;
+        else return false;
+    }
 }

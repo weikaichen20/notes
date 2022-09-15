@@ -1,5 +1,7 @@
 package com.wkc.leetcode.texas;
 
+import lombok.Data;
+
 import java.math.BigDecimal;
 import java.util.ArrayList;
 
@@ -8,6 +10,7 @@ import java.util.ArrayList;
  *
  * @author Weikaichen
  */
+@Data
 public class Player {
     private ArrayList<Card> handCard;
     private String name;
@@ -27,48 +30,8 @@ public class Player {
         this.name = name;
     }
 
-    public ArrayList<Card> getHandCard() {
-        return handCard;
-    }
-
-    public void setHandCard(ArrayList<Card> handCard) {
-        this.handCard = handCard;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public BigDecimal getChips() {
-        return chips;
-    }
-
-    public void setChips(BigDecimal chips) {
-        this.chips = chips;
-    }
-
-    public BigDecimal getAccount() {
-        return account;
-    }
-
-    public void setAccount(BigDecimal account) {
-        this.account = account;
-    }
-
     public void lookHand() {
         System.out.println(name + handCard);
     }
 
-
-    public String getMaxHand() {
-        return maxHand;
-    }
-
-    public void setMaxHand(String maxHand) {
-        this.maxHand = maxHand;
-    }
 }

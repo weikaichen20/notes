@@ -1,10 +1,13 @@
 package com.wkc.leetcode.texas;
 
+import lombok.Data;
+
 /**
  * Created on 2022/3/28.
  *
  * @author Weikaichen
  */
+@Data
 public class Card {
     private int number;
 
@@ -21,40 +24,8 @@ public class Card {
         this.suit = suit;
     }
 
-    public int getNumber() {
-        return number;
-    }
-
-    public void setNumber(int number) {
-        this.number = number;
-    }
-
-    public int getSn() {
-        return sn;
-    }
-
-    public void setSn(int sn) {
-        this.sn = sn;
-    }
-
-    public String getNumStr() {
-        return numStr;
-    }
-
-    public void setNumStr(String numStr) {
-        this.numStr = numStr;
-    }
-
-    public String getSuit() {
-        return suit;
-    }
-
-    public void setSuit(String suit) {
-        this.suit = suit;
-    }
-
     @Override
     public String toString() {
-        return "\t" + numStr + suit + "\t";
+        return numStr + suit;
     }
 }
